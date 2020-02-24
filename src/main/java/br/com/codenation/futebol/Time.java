@@ -1,4 +1,4 @@
-package br.com.codenation;
+package br.com.codenation.futebol;
 
 import java.time.LocalDate;
 

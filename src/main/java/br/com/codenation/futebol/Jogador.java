@@ -1,4 +1,4 @@
-package br.com.codenation;
+package br.com.codenation.futebol;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -27,7 +27,7 @@ public class Jogador {
         this.idTime = idTime;
         this.nome = nome;
         this.dataNascimento = dataNascimento;
-        this.nivelHabilidade = validarNivelHabilidade(nivelHabilidade);
+        setNivelHabilidade(nivelHabilidade);
         this.salario = salario;
     }
 
@@ -68,7 +68,7 @@ public class Jogador {
     }
 
     public void setNivelHabilidade(Integer nivelHabilidade) {
-        this.nivelHabilidade = nivelHabilidade;
+        this.nivelHabilidade = validarNivelHabilidade(nivelHabilidade);
     }
 
     public BigDecimal getSalario() {

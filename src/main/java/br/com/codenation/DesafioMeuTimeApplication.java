@@ -11,6 +11,8 @@ import br.com.codenation.desafio.exceptions.IdentificadorUtilizadoException;
 import br.com.codenation.desafio.exceptions.TimeNaoEncontradoException;
 import br.com.codenation.desafio.exceptions.JogadorNaoEncontradoException;
 import br.com.codenation.desafio.exceptions.CapitaoNaoInformadoException;
+import br.com.codenation.futebol.Jogador;
+import br.com.codenation.futebol.Time;
 
 public class DesafioMeuTimeApplication implements MeuTimeInterface {
     private List<Time> times = new ArrayList<>();
@@ -27,100 +29,68 @@ public class DesafioMeuTimeApplication implements MeuTimeInterface {
     @Desafio("incluirTime")
     public void incluirTime(final Long id, final String nome, final LocalDate dataCriacao,
                             final String corUniformePrincipal, final String corUniformeSecundario) {
-        if (buscarTime(id).isPresent()) {
-            throw new IdentificadorUtilizadoException("Identificador existente!");
-        } else {
-            times.add(new Time(id, nome, dataCriacao, corUniformePrincipal, corUniformeSecundario));
-        }
+        if (buscarTime(id).isPresent()) throw new IdentificadorUtilizadoException("Identificador existente!");
+        times.add(new Time(id, nome, dataCriacao, corUniformePrincipal, corUniformeSecundario));
+
     }
 
     @Desafio("incluirJogador")
     public void incluirJogador(final Long id, final Long idTime, final String nome, final LocalDate dataNascimento,
                                final Integer nivelHabilidade, final BigDecimal salario) {
-        if (buscarJogador(id).isPresent()) {
-            throw new IdentificadorUtilizadoException("Identificador existente!");
-        } else if (!buscarTime(idTime).isPresent()) {
-            throw new TimeNaoEncontradoException("Time inexistente!");
-        } else {
-            jogadores.add(new Jogador(id, idTime, nome, dataNascimento, nivelHabilidade, salario));
-        }
+        if (buscarJogador(id).isPresent()) throw new IdentificadorUtilizadoException("Identificador existente!");
+        buscarTime(idTime).orElseThrow(() -> new TimeNaoEncontradoException("Time inexistente!"));
+        jogadores.add(new Jogador(id, idTime, nome, dataNascimento, nivelHabilidade, salario));
     }
 
     @Desafio("definirCapitao")
     public void definirCapitao(final Long idJogador) {
-        Optional<Jogador> capitao = buscarJogador(idJogador);
-        if (!capitao.isPresent()) {
-            throw new JogadorNaoEncontradoException("Jogador inexistente!");
-        } else {
-            times.stream().filter(time -> time.getId().equals(capitao.get().getIdTime()))
-                    .forEach(time -> time.setIdCapitao(capitao.get().getId()));
-        }
+        Jogador capitao = buscarJogador(idJogador)
+                .orElseThrow(() -> new JogadorNaoEncontradoException("Jogador inexistente!"));
+        buscarTime(capitao.getIdTime()).get().setIdCapitao(idJogador);
     }
 
     @Desafio("buscarCapitaoDoTime")
     public Long buscarCapitaoDoTime(final Long idTime) {
-        Optional<Time> time = buscarTime(idTime);
-        if (!time.isPresent()) {
-            throw new TimeNaoEncontradoException("Time inexistente!");
-        } else if (time.get().getIdCapitao() == null) {
-            throw new CapitaoNaoInformadoException("Time sem Capitao informado!");
-        } else {
-            return time.get().getIdCapitao();
-        }
+        Time time = buscarTime(idTime).orElseThrow(() -> new TimeNaoEncontradoException("Time inexistente!"));
+        if (time.getIdCapitao() == null) throw new CapitaoNaoInformadoException("Time sem Capitao informado!");
+        return time.getIdCapitao();
     }
 
     @Desafio("buscarNomeJogador")
     public String buscarNomeJogador(final Long idJogador) {
-        Optional<Jogador> jogador = buscarJogador(idJogador);
-        if (!jogador.isPresent()) {
-            throw new JogadorNaoEncontradoException("Jogador inexistente!");
-        } else {
-            return jogador.get().getNome();
-        }
+        return buscarJogador(idJogador).map(Jogador::getNome)
+                .orElseThrow(() -> new JogadorNaoEncontradoException("Jogador inexistente!"));
     }
 
     @Desafio("buscarNomeTime")
     public String buscarNomeTime(final Long idTime) {
-        Optional<Time> time = buscarTime(idTime);
-        if (!time.isPresent()) {
-            throw new TimeNaoEncontradoException("Time inexistente!");
-        } else {
-            return time.get().getNome();
-        }
+        return buscarTime(idTime).map(Time::getNome)
+                .orElseThrow(() -> new TimeNaoEncontradoException("Time inexistente!"));
     }
 
     @Desafio("buscarJogadoresDoTime")
     public List<Long> buscarJogadoresDoTime(final Long idTime) {
-        if (!buscarTime(idTime).isPresent()) {
-            throw new TimeNaoEncontradoException("Time inexistente!");
-        } else {
-            return jogadores.stream()
-                    .filter(jogador -> jogador.getIdTime().equals(idTime))
-                    .sorted(Comparator.comparing(Jogador::getId))
-                    .map(Jogador::getId).collect(Collectors.toList());
-        }
+        buscarTime(idTime).orElseThrow(() -> new TimeNaoEncontradoException("Time inexistente!"));
+        return jogadores.stream()
+                .filter(jogador -> jogador.getIdTime().equals(idTime))
+                .sorted(Comparator.comparing(Jogador::getId))
+                .map(Jogador::getId).collect(Collectors.toList());
     }
 
     @Desafio("buscarMelhorJogadorDoTime")
     public Long buscarMelhorJogadorDoTime(final Long idTime) {
-        if (!buscarTime(idTime).isPresent()) {
-            throw new TimeNaoEncontradoException("Time inexistente!");
-        } else {
-            return jogadores.stream().filter(jogador -> jogador.getIdTime().equals(idTime))
-                    .min(Comparator.comparing(Jogador::getNivelHabilidade).reversed()
-                            .thenComparing(Comparator.comparing(Jogador::getId))).get().getId();
-        }
+        buscarTime(idTime).orElseThrow(() -> new TimeNaoEncontradoException("Time inexistente!"));
+        return jogadores.stream().filter(jogador -> jogador.getIdTime().equals(idTime))
+                .min(Comparator.comparing(Jogador::getNivelHabilidade).reversed()
+                        .thenComparing(Comparator.comparing(Jogador::getId))).get().getId();
     }
 
     @Desafio("buscarJogadorMaisVelho")
     public Long buscarJogadorMaisVelho(final Long idTime) {
-        if (!buscarTime(idTime).isPresent()) {
-            throw new TimeNaoEncontradoException("Time inexistente!");
-        } else {
-            return jogadores.stream().filter(jogador -> jogador.getIdTime().equals(idTime))
-                    .min(Comparator.comparing(Jogador::getDataNascimento)
-                            .thenComparing(Comparator.comparing(Jogador::getId))).get().getId();
-        }
+        buscarTime(idTime).orElseThrow(() -> new TimeNaoEncontradoException("Time inexistente!"));
+        return jogadores.stream().filter(jogador -> jogador.getIdTime().equals(idTime))
+                .min(Comparator.comparing(Jogador::getDataNascimento)
+                        .thenComparing(Comparator.comparing(Jogador::getId))).get().getId();
     }
 
     @Desafio("buscarTimes")
@@ -130,22 +100,15 @@ public class DesafioMeuTimeApplication implements MeuTimeInterface {
 
     @Desafio("buscarJogadorMaiorSalario")
     public Long buscarJogadorMaiorSalario(final Long idTime) {
-        if (!buscarTime(idTime).isPresent()) {
-            throw new TimeNaoEncontradoException("Time inexistente!");
-        } else {
-            return jogadores.stream().filter(jogador -> jogador.getIdTime().equals(idTime))
-                    .max(Comparator.comparing(Jogador::getSalario)).get().getId();
-        }
+        buscarTime(idTime).orElseThrow(() -> new TimeNaoEncontradoException("Time inexistente!"));
+        return jogadores.stream().filter(jogador -> jogador.getIdTime().equals(idTime))
+                .max(Comparator.comparing(Jogador::getSalario)).get().getId();
     }
 
     @Desafio("buscarSalarioDoJogador")
     public BigDecimal buscarSalarioDoJogador(final Long idJogador) {
-        Optional<Jogador> jogador = buscarJogador(idJogador);
-        if (!jogador.isPresent()) {
-            throw new JogadorNaoEncontradoException("Jogador inexistente!");
-        } else {
-            return jogador.get().getSalario();
-        }
+        return buscarJogador(idJogador).map(Jogador::getSalario)
+                .orElseThrow(() -> new JogadorNaoEncontradoException("Jogador inexistente!"));
     }
 
     @Desafio("buscarTopJogadores")
@@ -158,11 +121,10 @@ public class DesafioMeuTimeApplication implements MeuTimeInterface {
     @Desafio("buscarCorCamisaTimeDeFora")
     public String buscarCorCamisaTimeDeFora(final Long timeDaCasa, final Long timeDeFora) {
         Optional<Time> timeMandante = buscarTime(timeDaCasa), timeVisitante = buscarTime(timeDeFora);
-        if (!timeMandante.isPresent() || !timeVisitante.isPresent()) {
+        if (!timeMandante.isPresent() || !timeVisitante.isPresent())
             throw new TimeNaoEncontradoException("Time inexistente!");
-        } else if (timeMandante.get().getCorUniformePrincipal().equals(timeVisitante.get().getCorUniformePrincipal())) {
+        if (timeMandante.get().getCorUniformePrincipal().equals(timeVisitante.get().getCorUniformePrincipal()))
             return timeVisitante.get().getCorUniformeSecundario();
-        }
         return timeVisitante.get().getCorUniformePrincipal();
     }
 }
